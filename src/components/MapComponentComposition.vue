@@ -13,14 +13,12 @@
         layer-type="base"
         name="OpenStreetMap"
       ></l-tile-layer>
-      <!-- <l-control-layers /> -->
       <l-control position="topright">
-        <!-- <button @click="log('click')">
-          I am a useless button!
-        </button> -->
         <div class="options-panel">
-          <a class="toggle-menu" @click="showOption = !showOption"
-          :class="{ active: showOption }"
+          <a
+            class="toggle-menu"
+            @click="showOption = !showOption"
+            :class="{ active: showOption }"
           >
             <i></i>
             <i></i>
@@ -28,55 +26,51 @@
           </a>
 
           <transition name="expand">
-
-          <div class="options" v-show="showOption">
-            <!-- <div>Checked options: {{ checkedOptions }}</div> -->
-            <ul class="options-list">
-              <li class="options-item">
-                <input
-                  type="checkbox"
-                  id="free"
-                  value="fee_no"
-                  v-model="checkedOptions"
-                />
-                <label for="free">Free only</label>
-              </li>
-              <li class="options-item">
-                <input
-                  type="checkbox"
-                  id="wheelchair"
-                  value="wheelchair"
-                  v-model="checkedOptions"
-                />
-                <label for="wheelchair">Wheelchair ?</label>
-              </li>
-              <li class="options-item">
-                <input
-                  type="checkbox"
-                  id="drinking_water"
-                  value="drinking_water"
-                  v-model="checkedOptions"
-                />
-                <label for="drinking_water">Drinking water ?</label>
-              </li>
-            </ul>
-          </div>
-
+            <div class="options" v-show="showOption">
+              <ul class="options-list">
+                <li class="options-item">
+                  <input
+                    type="checkbox"
+                    id="free"
+                    value="fee_no"
+                    v-model="checkedOptions"
+                  />
+                  <label for="free">Free only</label>
+                </li>
+                <li class="options-item">
+                  <input
+                    type="checkbox"
+                    id="wheelchair"
+                    value="wheelchair"
+                    v-model="checkedOptions"
+                  />
+                  <label for="wheelchair">Wheelchair ?</label>
+                </li>
+                <li class="options-item">
+                  <input
+                    type="checkbox"
+                    id="drinking_water"
+                    value="drinking_water"
+                    v-model="checkedOptions"
+                  />
+                  <label for="drinking_water">Drinking water ?</label>
+                </li>
+              </ul>
+            </div>
           </transition>
         </div>
       </l-control>
 
       <l-marker
-              :lat-lng="[mapState.latitude, mapState.longitude]"
-              :icon="userIcon"
-            />
+        :lat-lng="[mapState.latitude, mapState.longitude]"
+        :icon="userIcon"
+      />
 
       <l-circle
-      :lat-lng="[mapState.latitude, mapState.longitude]"
-      :radius="mapState.accuracy"
-      :fill="true"
-    />
-
+        :lat-lng="[mapState.latitude, mapState.longitude]"
+        :radius="mapState.accuracy"
+        :fill="true"
+      />
 
       <l-marker
         v-for="{ tags, lat, lon, id } in mapState?.toiletMarkers"
@@ -93,11 +87,34 @@
         </l-popup>
       </l-marker>
     </l-map>
-    <!-- <button @click="changeIcon">New kitten icon</button> -->
   </div>
+  <transition name="spinner">
+    <div class="loading" v-show="loadingMarkers">
+      <div class="loading-text">Loading data, please wait...</div>
+      <spinner-component></spinner-component>
+    </div>
+  </transition>
 </template>
 
 <style scoped>
+.loading {
+  position: absolute;
+  bottom: 0;
+  z-index: 999;
+  left: 50%;
+  transform: translate(-50%, 0);
+  background-color: #202124;
+  border-radius: 15px 15px 0px 0px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 12px 0;
+}
+
+.loading-text {
+  text-align: center;
+}
+
 .map-container {
   display: flex;
   flex: 1;
@@ -108,7 +125,7 @@
   background-color: white;
   color: black;
   min-width: 50px;
-  transition: all .3s;
+  transition: all 0.3s;
 }
 
 .options {
@@ -116,25 +133,22 @@
 }
 
 .options-list {
-    list-style-type: none;
-    padding: 12px;
-    font-size: medium;
-  }
+  list-style-type: none;
+  padding: 12px;
+  font-size: medium;
+}
 
-  .options-item input {
-    margin-right: 12px;
-  }
+.options-item input {
+  margin-right: 12px;
+}
 
-  .toggle-menu {
+.toggle-menu {
   width: 30px;
   height: 50px;
   display: block;
   position: relative;
   margin-left: auto;
-      margin-right: 9px;
-  /* display: inline-block;
-  top: 10px;
-  float: right; */
+  margin-right: 9px;
   z-index: 1000;
   order: 2;
 }
@@ -143,10 +157,10 @@
   position: absolute;
   display: block;
   height: 2px;
-  background: #0094FC;
+  background: #0094fc;
   width: 30px;
-  -webkit-transition: all .3s;
-  transition: all .3s;
+  -webkit-transition: all 0.3s;
+  transition: all 0.3s;
 }
 
 .toggle-menu i:nth-child(1) {
@@ -177,22 +191,32 @@
   transform: rotateZ(-45deg);
 }
 
-.expand-enter-active, .expand-leave-active, .expand-enter-to {
-  transition: all .3s;
+.expand-enter-active,
+.expand-leave-active,
+.expand-enter-to {
+  transition: all 0.3s;
   max-height: 200px;
   max-width: 250px;
   overflow: hidden;
 }
-.expand-enter, .expand-leave-to  {
-  transition: all .3s;
+.expand-enter,
+.expand-leave-to {
+  transition: all 0.3s;
   max-height: 0;
   max-width: 0;
   opacity: 0;
 }
 
-
-
-
+.spinner-enter-active,
+.spinner-leave-active,
+.spinner-enter-to {
+  transition: all 0.3s;
+}
+.spinner-enter,
+.spinner-leave-to {
+  transition: all 0.3s;
+  transform: translate(-50%, 100%);
+}
 </style>
 
 <script setup lang="ts">
@@ -218,25 +242,28 @@ import { debounce } from "lodash";
 import OverpassApi, { type OverpassElement } from "../services/overpass-api";
 import { ref, reactive } from "vue";
 import { computed, type Ref } from "@vue/reactivity";
-import { divIcon, icon } from 'leaflet';
+import { divIcon, icon } from "leaflet";
+import SpinnerComponent from "./SpinnerComponent.vue";
+import { useToast } from 'vue-toastification';
 
 const mapLeaflet = ref(null);
-const checkedOptions: Ref<string[]> = ref(['fee_no']);
+const checkedOptions: Ref<string[]> = ref(["fee_no"]);
 const showOption = ref(false);
 const showCurrentLocation = ref(false);
+let loadingMarkers = ref(false);
 
-const userIcon =  divIcon({
-              html: `
+const userIcon = divIcon({
+  html: `
                 <svg viewBox="0 0 10 10">
                   <circle cx="5" cy="5" r="4" fill="#fff"/>
                   <circle cx="5" cy="5" r="2" fill="#1981FB">
                     <animate attributeName="r" begin="0s" dur="5s" repeatCount="indefinite" values="1.5;3;1.5"/>
                   </circle>
                 </svg>`,
-        className: '',
-        iconSize: [32, 32],
-        iconAnchor: [32 / 2, 32 / 2],
-      });
+  className: "",
+  iconSize: [32, 32],
+  iconAnchor: [32 / 2, 32 / 2],
+});
 
 const mapState = reactive({
   zoom: 16,
@@ -248,6 +275,8 @@ const mapState = reactive({
   map: {},
   toiletMarkers: [] as OverpassElement[],
 });
+
+const toast = useToast();
 
 let iconWidth = 25;
 let iconHeight = 40;
@@ -285,17 +314,25 @@ const onLoad = (event: any) => {
       console.log(position);
       updatePosition(position);
       loadToiletMarkers((mapState.map as any).getBounds());
-    }, console.error);
+    }, errorGetLocation);
 
     watchLocationID = navigator.geolocation.watchPosition((position) => {
       updatePosition(position);
     });
+  } else {
+    errorAuthorizeLocation();
   }
 };
 
 const loadToiletMarkers = async (bounds: any) => {
   mapState.bounds = bounds;
-  mapState.toiletMarkers = await OverpassApi.searchToiletSpots(bounds, checkedOptions);
+  loadingMarkers.value = true;
+  const newMarkers = await OverpassApi.searchToiletSpots(
+    bounds,
+    checkedOptions
+  );
+  mapState.toiletMarkers =  newMarkers.length > 0 ? newMarkers : mapState.toiletMarkers;
+  loadingMarkers.value = false;
 };
 
 const updatePosition = (position: GeolocationPosition) => {
@@ -303,7 +340,16 @@ const updatePosition = (position: GeolocationPosition) => {
   mapState.latitude = position.coords.latitude;
   mapState.longitude = position.coords.longitude;
   mapState.accuracy = position.coords.accuracy;
-}
+};
+
+const errorGetLocation = (error: GeolocationPositionError) => {
+  toast.error(error?.message);
+  console.error(error?.message, error?.code);
+};
+
+const errorAuthorizeLocation = () => {
+  toast.error("Error Location Not Authorized");
+};
 
 const boundsUpdated = debounce(loadToiletMarkers, 1000);
 

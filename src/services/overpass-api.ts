@@ -1,6 +1,7 @@
 import axios from "axios";
 import type { LatLng } from "leaflet";
 import type { Ref } from 'vue';
+import { useToast } from 'vue-toastification';
 
 
 export type OverpassBounds = {
@@ -63,6 +64,7 @@ export type OverpassOptions = "fee_no" | "wheelchair" | "drinking_water";
 
 export default {
   searchToiletSpots(bounds: any, options?: Ref<string[]>) {
+    const toast = useToast();
     const sanitizedBounds = {
       south: bounds.getSouth(),
       north: bounds.getNorth(),
@@ -77,16 +79,19 @@ export default {
     ].join(",");
     const optionsParams = `${
       options?.value.includes("fee_no") ? "['fee'='no']" : ""
-    } ${options?.value.includes("wheelchair") ? "['wheelchair'='yes']" : ""} ${
+    }${options?.value.includes("wheelchair") ? "['wheelchair'='yes']" : ""}${
       options?.value.includes("drinking_water")
         ? "['drinking_water'='yes']"
         : ""
     }`;
     const url = `https://www.overpass-api.de/api/interpreter?data=[out:json];node["amenity"="toilets"]${optionsParams}(${rect});out body;`;
-    return axios.get<{ elements: OverpassElement[] }>(url).then((response) => {
-      console.log("RESPONSE", response);
-      return response.data?.elements;
-    });
+    return axios
+      .get<{ elements: OverpassElement[] }>(url)
+      .then((response) => {
+        console.log("RESPONSE", response);
+        return response.data?.elements;
+      })
+      .catch((err) => {toast.error(err?.message); return []});
   },
 };
 

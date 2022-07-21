@@ -2,9 +2,10 @@
 import { RouterLink, RouterView } from 'vue-router'
 import HelloWorld from '@/components/HelloWorld.vue'
 
+
 </script>
 
-<template>
+<template style="overflow: hidden">
   <!-- <header>
     <img alt="Vue logo" class="logo" src="@/assets/logo.svg" width="125" height="125" />
 
@@ -27,11 +28,9 @@ import HelloWorld from '@/components/HelloWorld.vue'
 #app {
   display: flex;
     flex: 1;
-  /* max-width: 1280px; */
   height: 100vh;
   margin: 0 auto;
-  /* padding: 2rem; */
-
+  overflow: hidden;
   font-weight: normal;
 }
 
@@ -45,16 +44,8 @@ header {
   margin: 0 auto 2rem;
 }
 
-/* a,
-.green {
-  text-decoration: none;
-  color: hsla(160, 100%, 37%, 1);
-  transition: 0.4s;
-} */
-
 @media (hover: hover) {
   a:hover {
-    /* background-color: hsla(160, 100%, 37%, 0.2); */
     cursor: pointer;
   }
 }
