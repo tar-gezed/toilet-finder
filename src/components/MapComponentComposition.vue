@@ -4,10 +4,10 @@
       ref="mapLeaflet"
       v-model="mapState.zoom"
       v-model:zoom="mapState.zoom"
-      :center="[mapState.latitude, mapState.longitude]"
       @update:bounds="boundsUpdated"
       @ready="onLoad"
     >
+      <!-- :center="[mapState.latitude, mapState.longitude]" -->
       <l-tile-layer
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         layer-type="base"
@@ -242,7 +242,7 @@ import { debounce } from "lodash";
 import OverpassApi, { type OverpassElement } from "../services/overpass-api";
 import { ref, reactive } from "vue";
 import { computed, type Ref } from "@vue/reactivity";
-import { divIcon, icon } from "leaflet";
+import L, { divIcon, icon } from "leaflet";
 import SpinnerComponent from "./SpinnerComponent.vue";
 import { useToast } from 'vue-toastification';
 
@@ -312,6 +312,8 @@ const onLoad = (event: any) => {
     // Geolocation available
     window.navigator.geolocation.getCurrentPosition((position) => {
       console.log(position);
+      const latLon = L.latLng(position.coords.latitude,  position.coords.longitude);
+      (mapState.map as any).setView(latLon, mapState.zoom);
       updatePosition(position);
       loadToiletMarkers((mapState.map as any).getBounds());
     }, errorGetLocation);
@@ -351,7 +353,7 @@ const errorAuthorizeLocation = () => {
   toast.error("Error Location Not Authorized");
 };
 
-const boundsUpdated = debounce(loadToiletMarkers, 1000);
+const boundsUpdated = debounce(loadToiletMarkers, 3000);
 
 watch(checkedOptions, () => boundsUpdated((mapState.map as any).getBounds()));
 </script>
