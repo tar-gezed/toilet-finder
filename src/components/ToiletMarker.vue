@@ -79,7 +79,7 @@ import {
   LRectangle,
 } from "@vue-leaflet/vue-leaflet";
 import "leaflet/dist/leaflet.css";
-import { defineComponent } from 'vue'
+import { defineComponent } from "vue";
 export default defineComponent({
   components: {
     LMap,

@@ -16,7 +16,11 @@
       ></l-tile-layer>
       <l-control-layers />
 
-      <l-marker v-for="{tags, lat, lon, id} in toiletMarkers" :key="id" :lat-lng="[lat, lon]">
+      <l-marker
+        v-for="{ tags, lat, lon, id } in toiletMarkers"
+        :key="id"
+        :lat-lng="[lat, lon]"
+      >
         <l-tooltip>
           <ul>
             <li v-for="(tagValue, tagKey) in tags">
@@ -96,7 +100,7 @@ import { defineComponent } from "vue";
 import type { PropType } from "vue";
 import axios from "axios";
 import { debounce } from "lodash";
-import OverpassApi, { type OverpassElement } from '../services/overpass-api';
+import OverpassApi, { type OverpassElement } from "../services/overpass-api";
 
 export default defineComponent({
   components: {
@@ -121,7 +125,7 @@ export default defineComponent({
       iconHeight: 40,
       map: null,
       bounds: null,
-      toiletMarkers: [] as OverpassElement[]
+      toiletMarkers: [] as OverpassElement[],
     };
   },
   computed: {
@@ -133,7 +137,7 @@ export default defineComponent({
     },
   },
   created() {
-    this.boundsUpdated = debounce(this.loadToiletMarkers, 3000)
+    this.boundsUpdated = debounce(this.loadToiletMarkers, 3000);
   },
   // async created() {
   //   try {
@@ -158,7 +162,7 @@ export default defineComponent({
     },
     onLoad() {
       this.map = (this.$refs?.["map"] as any).leafletObject;
-      console.log((this.map as any).getBounds(), this.bounds)
+      console.log((this.map as any).getBounds(), this.bounds);
       if (window.navigator.geolocation) {
         // Geolocation available
         window.navigator.geolocation.getCurrentPosition((coords) => {
@@ -172,11 +176,10 @@ export default defineComponent({
       console.log("oeirpgkjdhgkljdsfhl");
     },
     async loadToiletMarkers(bounds: any) {
-        this.bounds = bounds;
-        console.log("Bounds: ", bounds);
-        this.toiletMarkers = await OverpassApi.searchToiletSpots(bounds);
-    }
-
+      this.bounds = bounds;
+      console.log("Bounds: ", bounds);
+      this.toiletMarkers = await OverpassApi.searchToiletSpots(bounds);
+    },
   },
 });
 </script>

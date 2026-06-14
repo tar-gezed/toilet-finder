@@ -7,8 +7,7 @@
         :class="{ active: checkedOptions.includes('fee_no') }"
         @click="toggleFilter('fee_no')"
       >
-        <!-- Piggy Bank SVG -->
-        <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-1.4c.6.2 1.2.4 1.8.4h3.4c.6 0 1.2-.2 1.8-.4V20a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3.9c1.7-1.2 2-3.1 2-4.1 0-1.1-.9-2-2-2h-1c-.2-.6-1.5-2-3-2Z"/><path d="M9.5 14h.01"/><path d="M2 12h2"/><path d="M12 2v3"/></svg>
+        <PiggyBank class="pill-icon" />
         <span>Free Toilets</span>
       </button>
 
@@ -17,8 +16,7 @@
         :class="{ active: checkedOptions.includes('wheelchair') }"
         @click="toggleFilter('wheelchair')"
       >
-        <!-- Wheelchair SVG -->
-        <svg class="pill-icon" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="5" r="2"/><path d="M9 18h6"/><path d="M10 7v6h4v5"/><path d="M7 13a5 5 0 1 0 10 0"/></svg>
+        <Accessibility class="pill-icon" />
         <span>Wheelchair Accessible</span>
       </button>
 
@@ -27,8 +25,7 @@
         :class="{ active: checkedOptions.includes('drinking_water') }"
         @click="toggleFilter('drinking_water')"
       >
-        <!-- Droplet SVG -->
-        <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-11-7-11S5 10.7 5 15a7 7 0 0 0 7 7z"/></svg>
+        <Droplet class="pill-icon" />
         <span>Drinking Water Nearby</span>
       </button>
     </div>
@@ -70,75 +67,123 @@
           <l-popup v-if="!isMobile && toilet.tags">
             <div class="popup-detail-content">
               <h3 class="popup-title">{{ getToiletName(toilet.tags) }}</h3>
-              <span class="popup-distance" v-if="getDistanceText(toilet.lat, toilet.lon)">
+              <span
+                class="popup-distance"
+                v-if="getDistanceText(toilet.lat, toilet.lon)"
+              >
                 {{ getDistanceText(toilet.lat, toilet.lon).toUpperCase() }} AWAY
               </span>
 
               <div class="popup-info-list">
                 <div class="popup-info-item">
-                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-1.4c.6.2 1.2.4 1.8.4h3.4c.6 0 1.2-.2 1.8-.4V20a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3.9c1.7-1.2 2-3.1 2-4.1 0-1.1-.9-2-2-2h-1c-.2-.6-1.5-2-3-2Z"/><path d="M9.5 14h.01"/><path d="M2 12h2"/><path d="M12 2v3"/></svg>
+                  <PiggyBank class="info-icon" />
                   <span>{{ getFeeLabel(toilet.tags) }}</span>
                 </div>
 
                 <div class="popup-info-item">
-                  <svg class="info-icon" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="5" r="2"/><path d="M9 18h6"/><path d="M10 7v6h4v5"/><path d="M7 13a5 5 0 1 0 10 0"/></svg>
+                  <Accessibility class="info-icon" />
                   <span>{{ getAccessibilityLabel(toilet.tags) }}</span>
                 </div>
 
-                <div class="popup-info-item" v-if="hasChangingTableInfo(toilet.tags)">
-                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h.01"/><path d="M15 12h.01"/><path d="M10 16c.5.5 1.5.5 2 0"/><path d="M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 5 6.3"/><path d="M12 2v2"/><path d="M12 20v2"/></svg>
+                <div
+                  class="popup-info-item"
+                  v-if="hasChangingTableInfo(toilet.tags)"
+                >
+                  <Baby class="info-icon" />
                   <span>{{ getChangingTableLabel(toilet.tags) }}</span>
                 </div>
 
-                <div class="popup-info-item" v-if="hasDrinkingWater(toilet.tags)">
-                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-11-7-11S5 10.7 5 15a7 7 0 0 0 7 7z"/></svg>
+                <div
+                  class="popup-info-item"
+                  v-if="hasDrinkingWater(toilet.tags)"
+                >
+                  <Droplet class="info-icon" />
                   <span>Drinking Water Nearby</span>
                 </div>
 
-                <div class="popup-info-item" v-if="getToiletPositionLabel(toilet.tags)">
-                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                <div
+                  class="popup-info-item"
+                  v-if="getToiletPositionLabel(toilet.tags)"
+                >
+                  <SquareDot class="info-icon" />
                   <span>{{ getToiletPositionLabel(toilet.tags) }}</span>
                 </div>
 
-                <div class="popup-info-item" v-if="getToiletDisposalLabel(toilet.tags)">
-                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                <div
+                  class="popup-info-item"
+                  v-if="getToiletDisposalLabel(toilet.tags)"
+                >
+                  <Globe class="info-icon" />
                   <span>{{ getToiletDisposalLabel(toilet.tags) }}</span>
                 </div>
 
-                <div class="popup-info-item" v-if="toilet.tags.unisex === 'yes'">
-                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                <div
+                  class="popup-info-item"
+                  v-if="toilet.tags.unisex === 'yes'"
+                >
+                  <Users class="info-icon" />
                   <span>Unisex Restroom</span>
                 </div>
 
-                <div class="popup-info-item" v-if="toilet.tags['toilets:handwashing']">
-                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 22h20M12 2v16M12 10H8a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4M12 10h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-4"/></svg>
-                  <span>Handwashing: {{ toilet.tags['toilets:handwashing'] === 'yes' ? 'Yes' : 'No' }}</span>
+                <div
+                  class="popup-info-item"
+                  v-if="toilet.tags['toilets:handwashing']"
+                >
+                  <Hand class="info-icon" />
+                  <span
+                    >Handwashing:
+                    {{
+                      toilet.tags["toilets:handwashing"] === "yes"
+                        ? "Yes"
+                        : "No"
+                    }}</span
+                  >
                 </div>
 
-                <div class="popup-info-item" v-if="toilet.tags['toilets:paper_provided']">
-                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
-                  <span>Toilet Paper Provided: {{ toilet.tags['toilets:paper_provided'] === 'yes' ? 'Yes' : 'No' }}</span>
+                <div
+                  class="popup-info-item"
+                  v-if="toilet.tags['toilets:paper_provided']"
+                >
+                  <FileText class="info-icon" />
+                  <span
+                    >Toilet Paper Provided:
+                    {{
+                      toilet.tags["toilets:paper_provided"] === "yes"
+                        ? "Yes"
+                        : "No"
+                    }}</span
+                  >
                 </div>
 
-                <div class="popup-info-item" v-if="getPaymentLabel(toilet.tags)">
-                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="22" height="16" x="1" y="4" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                <div
+                  class="popup-info-item"
+                  v-if="getPaymentLabel(toilet.tags)"
+                >
+                  <CreditCard class="info-icon" />
                   <span>Payment: {{ getPaymentLabel(toilet.tags) }}</span>
                 </div>
 
-                <div class="popup-info-item" v-if="getAccessTypeLabel(toilet.tags)">
-                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/></svg>
+                <div
+                  class="popup-info-item"
+                  v-if="getAccessTypeLabel(toilet.tags)"
+                >
+                  <Key class="info-icon" />
                   <span>{{ getAccessTypeLabel(toilet.tags) }}</span>
                 </div>
 
                 <div class="popup-info-item" v-if="toilet.tags.opening_hours">
-                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <Clock class="info-icon" />
                   <span>Hours: {{ toilet.tags.opening_hours }}</span>
                 </div>
               </div>
 
-              <a class="cta-button" :href="getDirectionsUrl(toilet.lat, toilet.lon)" target="_blank">
+              <a
+                class="cta-button"
+                :href="getDirectionsUrl(toilet.lat, toilet.lon)"
+                target="_blank"
+              >
                 <span>Get Directions</span>
-                <svg class="cta-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+                <navigation class="cta-icon" />
               </a>
             </div>
           </l-popup>
@@ -153,7 +198,7 @@
       @click="centerOnUserLocation"
       aria-label="Center on my location"
     >
-      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fab-icon"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+      <Locate class="fab-icon" />
     </button>
 
     <!-- Bottom Sheet Backdrop -->
@@ -167,79 +212,144 @@
 
     <!-- Bottom Sheet Slide-Up Panel -->
     <transition name="slide-up">
-      <div class="bottom-sheet-panel" v-if="isMobile && showBottomSheet && selectedToilet">
+      <div
+        class="bottom-sheet-panel"
+        v-if="isMobile && showBottomSheet && selectedToilet"
+      >
         <div class="bottom-sheet-handle" @click="showBottomSheet = false"></div>
 
         <div class="bottom-sheet-body">
-          <h2 class="bottom-sheet-title">{{ getToiletName(selectedToilet.tags) }}</h2>
+          <h2 class="bottom-sheet-title">
+            {{ getToiletName(selectedToilet.tags) }}
+          </h2>
 
           <div class="bottom-sheet-badges">
-            <span class="badge badge-distance" v-if="getDistanceText(selectedToilet.lat, selectedToilet.lon)">
-              {{ getDistanceText(selectedToilet.lat, selectedToilet.lon).toUpperCase() }} AWAY
+            <span
+              class="badge badge-distance"
+              v-if="getDistanceText(selectedToilet.lat, selectedToilet.lon)"
+            >
+              {{
+                getDistanceText(
+                  selectedToilet.lat,
+                  selectedToilet.lon
+                ).toUpperCase()
+              }}
+              AWAY
             </span>
 
-            <span class="badge" :class="isFree(selectedToilet.tags) ? 'badge-free' : 'badge-paid'">
-              <!-- Piggy Bank Icon -->
-              <svg class="badge-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-1.4c.6.2 1.2.4 1.8.4h3.4c.6 0 1.2-.2 1.8-.4V20a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3.9c1.7-1.2 2-3.1 2-4.1 0-1.1-.9-2-2-2h-1c-.2-.6-1.5-2-3-2Z"/><path d="M9.5 14h.01"/><path d="M2 12h2"/><path d="M12 2v3"/></svg>
+            <span
+              class="badge"
+              :class="isFree(selectedToilet.tags) ? 'badge-free' : 'badge-paid'"
+            >
+              <PiggyBank class="badge-icon" />
               <span>{{ getFeeLabel(selectedToilet.tags) }}</span>
             </span>
 
-            <span class="badge" :class="isAccessible(selectedToilet.tags) ? 'badge-accessible' : 'badge-inaccessible'">
-              <!-- Wheelchair Icon -->
-              <svg class="badge-icon" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="5" r="2"/><path d="M9 18h6"/><path d="M10 7v6h4v5"/><path d="M7 13a5 5 0 1 0 10 0"/></svg>
+            <span
+              class="badge"
+              :class="
+                isAccessible(selectedToilet.tags)
+                  ? 'badge-accessible'
+                  : 'badge-inaccessible'
+              "
+            >
+              <Accessibility class="badge-icon" />
               <span>{{ getAccessibilityLabel(selectedToilet.tags) }}</span>
             </span>
 
-            <span class="badge badge-neutral" v-if="hasChangingTableInfo(selectedToilet.tags)">
-              <!-- Baby Icon -->
-              <svg class="badge-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h.01"/><path d="M15 12h.01"/><path d="M10 16c.5.5 1.5.5 2 0"/><path d="M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 5 6.3"/><path d="M12 2v2"/><path d="M12 20v2"/></svg>
+            <span
+              class="badge badge-neutral"
+              v-if="hasChangingTableInfo(selectedToilet.tags)"
+            >
+              <Baby class="badge-icon" />
               <span>{{ getChangingTableLabel(selectedToilet.tags) }}</span>
             </span>
 
-            <span class="badge badge-neutral" v-if="hasDrinkingWater(selectedToilet.tags)">
-              <!-- Water Icon -->
-              <svg class="badge-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-11-7-11S5 10.7 5 15a7 7 0 0 0 7 7z"/></svg>
+            <span
+              class="badge badge-neutral"
+              v-if="hasDrinkingWater(selectedToilet.tags)"
+            >
+              <Droplet class="badge-icon" />
               <span>Drinking Water</span>
             </span>
           </div>
 
           <div class="bottom-sheet-details">
-            <div class="detail-row" v-if="getToiletPositionLabel(selectedToilet.tags)">
+            <div
+              class="detail-row"
+              v-if="getToiletPositionLabel(selectedToilet.tags)"
+            >
               <span class="detail-label">Type:</span>
-              <span class="detail-value">{{ getToiletPositionLabel(selectedToilet.tags) }}</span>
+              <span class="detail-value">{{
+                getToiletPositionLabel(selectedToilet.tags)
+              }}</span>
             </div>
-            <div class="detail-row" v-if="getToiletDisposalLabel(selectedToilet.tags)">
+            <div
+              class="detail-row"
+              v-if="getToiletDisposalLabel(selectedToilet.tags)"
+            >
               <span class="detail-label">Disposal:</span>
-              <span class="detail-value">{{ getToiletDisposalLabel(selectedToilet.tags) }}</span>
+              <span class="detail-value">{{
+                getToiletDisposalLabel(selectedToilet.tags)
+              }}</span>
             </div>
             <div class="detail-row" v-if="selectedToilet.tags.unisex">
               <span class="detail-label">Unisex:</span>
-              <span class="detail-value">{{ selectedToilet.tags.unisex === 'yes' ? 'Yes' : 'No' }}</span>
+              <span class="detail-value">{{
+                selectedToilet.tags.unisex === "yes" ? "Yes" : "No"
+              }}</span>
             </div>
-            <div class="detail-row" v-if="selectedToilet.tags['toilets:handwashing']">
+            <div
+              class="detail-row"
+              v-if="selectedToilet.tags['toilets:handwashing']"
+            >
               <span class="detail-label">Handwashing:</span>
-              <span class="detail-value">{{ selectedToilet.tags['toilets:handwashing'] === 'yes' ? 'Yes' : 'No' }}</span>
+              <span class="detail-value">{{
+                selectedToilet.tags["toilets:handwashing"] === "yes"
+                  ? "Yes"
+                  : "No"
+              }}</span>
             </div>
-            <div class="detail-row" v-if="selectedToilet.tags['toilets:paper_provided']">
+            <div
+              class="detail-row"
+              v-if="selectedToilet.tags['toilets:paper_provided']"
+            >
               <span class="detail-label">Toilet Paper Provided:</span>
-              <span class="detail-value">{{ selectedToilet.tags['toilets:paper_provided'] === 'yes' ? 'Yes' : 'No' }}</span>
+              <span class="detail-value">{{
+                selectedToilet.tags["toilets:paper_provided"] === "yes"
+                  ? "Yes"
+                  : "No"
+              }}</span>
             </div>
             <div class="detail-row" v-if="getPaymentLabel(selectedToilet.tags)">
               <span class="detail-label">Payment:</span>
-              <span class="detail-value">{{ getPaymentLabel(selectedToilet.tags) }}</span>
+              <span class="detail-value">{{
+                getPaymentLabel(selectedToilet.tags)
+              }}</span>
             </div>
-            <div class="detail-row" v-if="getAccessTypeLabel(selectedToilet.tags)">
+            <div
+              class="detail-row"
+              v-if="getAccessTypeLabel(selectedToilet.tags)"
+            >
               <span class="detail-label">Access:</span>
-              <span class="detail-value">{{ getAccessTypeLabel(selectedToilet.tags) }}</span>
+              <span class="detail-value">{{
+                getAccessTypeLabel(selectedToilet.tags)
+              }}</span>
             </div>
             <div class="detail-row" v-if="selectedToilet.tags.opening_hours">
               <span class="detail-label">Hours:</span>
-              <span class="detail-value">{{ selectedToilet.tags.opening_hours }}</span>
+              <span class="detail-value">{{
+                selectedToilet.tags.opening_hours
+              }}</span>
             </div>
           </div>
 
-          <a class="bottom-sheet-cta" :href="getDirectionsUrl(selectedToilet.lat, selectedToilet.lon)" target="_blank">
-            <svg class="cta-icon-large" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+          <a
+            class="bottom-sheet-cta"
+            :href="getDirectionsUrl(selectedToilet.lat, selectedToilet.lon)"
+            target="_blank"
+          >
+            <navigation class="cta-icon-large" />
             <span>Get Directions</span>
           </a>
         </div>
@@ -279,7 +389,7 @@
   flex-direction: column;
   align-items: center;
   padding: 12px 24px;
-  box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .loading-text {
@@ -327,7 +437,7 @@
   border-radius: 9999px;
   border: 1px solid rgba(226, 232, 240, 0.8);
   background: white;
-  font-family: 'Inter', system-ui, sans-serif;
+  font-family: "Inter", system-ui, sans-serif;
   font-size: 13px;
   font-weight: 600;
   color: #334155;
@@ -374,7 +484,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
+    0 4px 6px -2px rgba(0, 0, 0, 0.05);
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   color: #1981fb;
@@ -382,7 +493,8 @@
 
 .locate-fab:hover {
   transform: scale(1.05);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1),
+    0 10px 10px -5px rgba(0, 0, 0, 0.04);
 }
 
 .locate-fab:active {
@@ -590,36 +702,54 @@
 <script setup lang="ts">
 import {
   LMap,
-  LIcon,
   LTileLayer,
   LMarker,
   LCircle,
-  LControlLayers,
-  LTooltip,
-  LControl,
   LPopup,
-  LPolyline,
-  LPolygon,
-  LRectangle,
 } from "@vue-leaflet/vue-leaflet";
 import "leaflet/dist/leaflet.css";
-import { watch, ref, reactive, computed, onMounted, onUnmounted, markRaw } from "vue";
+import {
+  watch,
+  ref,
+  reactive,
+  computed,
+  onMounted,
+  onUnmounted,
+  markRaw,
+} from "vue";
 import type { Ref } from "vue";
-import axios from "axios";
 import { debounce } from "lodash";
 import OverpassApi, { type OverpassElement } from "../services/overpass-api";
-import L, { divIcon, icon } from "leaflet";
+import L, { divIcon } from "leaflet";
 import SpinnerComponent from "./SpinnerComponent.vue";
-import { useToast } from 'vue-toastification';
+import { useToast } from "vue-toastification";
+import {
+  PiggyBank,
+  Accessibility,
+  Droplet,
+  Baby,
+  Users,
+  Hand,
+  FileText,
+  CreditCard,
+  Key,
+  Clock,
+  Navigation,
+  Locate,
+  SquareDot,
+  Globe,
+} from "@lucide/vue";
 
 const mapLeaflet = ref(null);
 const checkedOptions: Ref<string[]> = ref(["fee_no"]);
 const showOption = ref(false);
 const showCurrentLocation = ref(false);
-let loadingMarkers = ref(false);
+const loadingMarkers = ref(false);
 
 // Responsive detection
-const isMobile = ref(typeof window !== "undefined" ? window.innerWidth < 768 : false);
+const isMobile = ref(
+  typeof window !== "undefined" ? window.innerWidth < 768 : false
+);
 const checkMobile = () => {
   isMobile.value = window.innerWidth < 768;
 };
@@ -667,7 +797,12 @@ const deg2rad = (deg: number): number => {
   return deg * (Math.PI / 180);
 };
 
-const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): string => {
+const calculateDistance = (
+  lat1: number,
+  lon1: number,
+  lat2: number,
+  lon2: number
+): string => {
   const R = 6371; // Radius of the earth in km
   const dLat = deg2rad(lat2 - lat1);
   const dLon = deg2rad(lon2 - lon1);
@@ -775,7 +910,12 @@ const getToiletDisposalLabel = (tags: any) => {
 };
 
 const getAccessTypeLabel = (tags: any) => {
-  if (!tags || !tags.access || tags.access === "yes" || tags.access === "public")
+  if (
+    !tags ||
+    !tags.access ||
+    tags.access === "yes" ||
+    tags.access === "public"
+  )
     return null;
   const val = tags.access;
   if (val === "customers") return "Customers only";
@@ -786,8 +926,18 @@ const getAccessTypeLabel = (tags: any) => {
 const getPaymentLabel = (tags: any) => {
   if (!tags) return null;
   const methods = [];
-  if (tags["payment:coins"] === "yes" || tags["payment:cash"] === "yes" || tags["payment:notes"] === "yes") methods.push("Cash/Coins");
-  if (tags["payment:cards"] === "yes" || tags["payment:credit_cards"] === "yes" || tags["payment:debit_cards"] === "yes") methods.push("Cards");
+  if (
+    tags["payment:coins"] === "yes" ||
+    tags["payment:cash"] === "yes" ||
+    tags["payment:notes"] === "yes"
+  )
+    methods.push("Cash/Coins");
+  if (
+    tags["payment:cards"] === "yes" ||
+    tags["payment:credit_cards"] === "yes" ||
+    tags["payment:debit_cards"] === "yes"
+  )
+    methods.push("Cards");
   if (tags["payment:contactless"] === "yes") methods.push("Contactless");
   if (methods.length > 0) return methods.join(", ");
   return null;
@@ -795,7 +945,8 @@ const getPaymentLabel = (tags: any) => {
 
 // Universal Navigation Link
 const getDirectionsUrl = (lat: number, lon: number) => {
-  const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+  const userAgent =
+    navigator.userAgent || navigator.vendor || (window as any).opera;
   const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream;
   if (isIOS) {
     return `https://maps.apple.com/?q=${lat},${lon}`;
@@ -810,13 +961,15 @@ const centerOnUserLocation = () => {
     (mapState.map as any).setView(latLon, 16);
   } else {
     window.navigator.geolocation.getCurrentPosition((position) => {
-      const latLon = L.latLng(position.coords.latitude, position.coords.longitude);
+      const latLon = L.latLng(
+        position.coords.latitude,
+        position.coords.longitude
+      );
       (mapState.map as any).setView(latLon, 16);
       updatePosition(position);
     }, errorGetLocation);
   }
 };
-
 
 const userIcon = divIcon({
   html: `
@@ -845,7 +998,7 @@ const mapState = reactive({
 const toast = useToast();
 
 let iconWidth = 25;
-let iconHeight = 40;
+const iconHeight = 40;
 let watchLocationID = 0;
 
 const iconUrl = computed(() => {
@@ -878,7 +1031,10 @@ const onLoad = (event: any) => {
     // Geolocation available
     window.navigator.geolocation.getCurrentPosition((position) => {
       console.log(position);
-      const latLon = L.latLng(position.coords.latitude,  position.coords.longitude);
+      const latLon = L.latLng(
+        position.coords.latitude,
+        position.coords.longitude
+      );
       (mapState.map as any).setView(latLon, mapState.zoom || 16);
       updatePosition(position);
       loadToiletMarkers((mapState.map as any).getBounds());
@@ -899,7 +1055,8 @@ const loadToiletMarkers = async (bounds: any) => {
     bounds,
     checkedOptions
   );
-  mapState.toiletMarkers =  newMarkers.length > 0 ? newMarkers : mapState.toiletMarkers;
+  mapState.toiletMarkers =
+    newMarkers.length > 0 ? newMarkers : mapState.toiletMarkers;
   loadingMarkers.value = false;
 };
 
@@ -919,7 +1076,10 @@ const errorAuthorizeLocation = () => {
   toast.error("Error Location Not Authorized");
 };
 
-const boundsUpdated = debounce(loadToiletMarkers, 3000, { 'leading': true, 'trailing': true });
+const boundsUpdated = debounce(loadToiletMarkers, 3000, {
+  leading: true,
+  trailing: true,
+});
 
 watch(checkedOptions, () => boundsUpdated((mapState.map as any).getBounds()));
 </script>

@@ -1,8 +1,7 @@
 import axios from "axios";
 import type { LatLng } from "leaflet";
-import type { Ref } from 'vue';
-import { useToast } from 'vue-toastification';
-
+import type { Ref } from "vue";
+import { useToast } from "vue-toastification";
 
 export type OverpassBounds = {
   south: number;
@@ -25,7 +24,7 @@ export type OverpassTags = {
   fee?: "yes" | "no";
   man_made?: "water_tap";
   wheelchair?: "yes" | "no" | "limited";
-  changing_table?:"yes" | "no" | "limited";
+  changing_table?: "yes" | "no" | "limited";
   name?: string;
   indoor?: "no" | "yes";
   drinking_water?: "yes";
@@ -102,7 +101,9 @@ export default {
         console.log("RESPONSE", response);
         return response.data?.elements;
       })
-      .catch((err) => {toast.error(err?.message); return []});
+      .catch((err) => {
+        toast.error(err?.message);
+        return [];
+      });
   },
 };
-
