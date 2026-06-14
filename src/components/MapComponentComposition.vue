@@ -1,92 +1,250 @@
 <template>
-  <div class="map-container">
-    <l-map
-      ref="mapLeaflet"
-      v-model="mapState.zoom"
-      v-model:zoom="mapState.zoom"
-      @update:bounds="boundsUpdated"
-      @ready="onLoad"
-    >
-      <!-- :center="[mapState.latitude, mapState.longitude]" -->
-      <l-tile-layer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        layer-type="base"
-        name="OpenStreetMap"
-      ></l-tile-layer>
-      <l-control position="topright">
-        <div class="options-panel">
-          <a
-            class="toggle-menu"
-            @click="showOption = !showOption"
-            :class="{ active: showOption }"
-          >
-            <i></i>
-            <i></i>
-            <i></i>
-          </a>
-
-          <transition name="expand">
-            <div class="options" v-show="showOption">
-              <ul class="options-list">
-                <li class="options-item">
-                  <input
-                    type="checkbox"
-                    id="free"
-                    value="fee_no"
-                    v-model="checkedOptions"
-                  />
-                  <label for="free">Free only</label>
-                </li>
-                <li class="options-item">
-                  <input
-                    type="checkbox"
-                    id="wheelchair"
-                    value="wheelchair"
-                    v-model="checkedOptions"
-                  />
-                  <label for="wheelchair">Wheelchair ?</label>
-                </li>
-                <li class="options-item">
-                  <input
-                    type="checkbox"
-                    id="drinking_water"
-                    value="drinking_water"
-                    v-model="checkedOptions"
-                  />
-                  <label for="drinking_water">Drinking water ?</label>
-                </li>
-              </ul>
-            </div>
-          </transition>
-        </div>
-      </l-control>
-
-      <l-marker
-        :lat-lng="[mapState.latitude, mapState.longitude]"
-        :icon="userIcon"
-      />
-
-      <l-circle
-        :lat-lng="[mapState.latitude, mapState.longitude]"
-        :radius="mapState.accuracy"
-        :fill="true"
-      />
-
-      <l-marker
-        v-for="{ tags, lat, lon, id } in mapState?.toiletMarkers"
-        :key="id"
-        :lat-lng="[lat, lon]"
+  <div class="app-layout">
+    <!-- Modern Floating Filter Pills -->
+    <div class="filter-bar">
+      <button
+        class="filter-pill"
+        :class="{ active: checkedOptions.includes('fee_no') }"
+        @click="toggleFilter('fee_no')"
       >
-        <l-popup v-if="tags">
-          <ul>
-            <li v-for="(tagValue, tagKey) in tags">
-              {{ tagKey }}: {{ tagValue }}
-            </li>
-          </ul>
-          <a :href="`geo:${lat},${lon}`" target="_blank">Open on maps</a>
-        </l-popup>
-      </l-marker>
-    </l-map>
+        <!-- Piggy Bank SVG -->
+        <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-1.4c.6.2 1.2.4 1.8.4h3.4c.6 0 1.2-.2 1.8-.4V20a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3.9c1.7-1.2 2-3.1 2-4.1 0-1.1-.9-2-2-2h-1c-.2-.6-1.5-2-3-2Z"/><path d="M9.5 14h.01"/><path d="M2 12h2"/><path d="M12 2v3"/></svg>
+        <span>Free Toilets</span>
+      </button>
+
+      <button
+        class="filter-pill"
+        :class="{ active: checkedOptions.includes('wheelchair') }"
+        @click="toggleFilter('wheelchair')"
+      >
+        <!-- Wheelchair SVG -->
+        <svg class="pill-icon" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="5" r="2"/><path d="M9 18h6"/><path d="M10 7v6h4v5"/><path d="M7 13a5 5 0 1 0 10 0"/></svg>
+        <span>Wheelchair Accessible</span>
+      </button>
+
+      <button
+        class="filter-pill"
+        :class="{ active: checkedOptions.includes('drinking_water') }"
+        @click="toggleFilter('drinking_water')"
+      >
+        <!-- Droplet SVG -->
+        <svg class="pill-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-11-7-11S5 10.7 5 15a7 7 0 0 0 7 7z"/></svg>
+        <span>Drinking Water Nearby</span>
+      </button>
+    </div>
+
+    <!-- Map Container -->
+    <div class="map-container">
+      <l-map
+        ref="mapLeaflet"
+        :zoom="mapState.zoom"
+        :center="[mapState.latitude, mapState.longitude]"
+        v-model:zoom="mapState.zoom"
+        @update:bounds="boundsUpdated"
+        @ready="onLoad"
+        @click="onMapClick"
+      >
+        <l-tile-layer
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          layer-type="base"
+          name="OpenStreetMap"
+        ></l-tile-layer>
+
+        <l-marker
+          :lat-lng="[mapState.latitude, mapState.longitude]"
+          :icon="userIcon"
+        />
+
+        <l-circle
+          :lat-lng="[mapState.latitude, mapState.longitude]"
+          :radius="mapState.accuracy"
+          :fill="true"
+        />
+
+        <l-marker
+          v-for="toilet in mapState?.toiletMarkers"
+          :key="toilet.id"
+          :lat-lng="[toilet.lat, toilet.lon]"
+          @click="onMarkerClick(toilet)"
+        >
+          <l-popup v-if="!isMobile && toilet.tags">
+            <div class="popup-detail-content">
+              <h3 class="popup-title">{{ getToiletName(toilet.tags) }}</h3>
+              <span class="popup-distance" v-if="getDistanceText(toilet.lat, toilet.lon)">
+                {{ getDistanceText(toilet.lat, toilet.lon).toUpperCase() }} AWAY
+              </span>
+
+              <div class="popup-info-list">
+                <div class="popup-info-item">
+                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-1.4c.6.2 1.2.4 1.8.4h3.4c.6 0 1.2-.2 1.8-.4V20a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3.9c1.7-1.2 2-3.1 2-4.1 0-1.1-.9-2-2-2h-1c-.2-.6-1.5-2-3-2Z"/><path d="M9.5 14h.01"/><path d="M2 12h2"/><path d="M12 2v3"/></svg>
+                  <span>{{ getFeeLabel(toilet.tags) }}</span>
+                </div>
+
+                <div class="popup-info-item">
+                  <svg class="info-icon" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="5" r="2"/><path d="M9 18h6"/><path d="M10 7v6h4v5"/><path d="M7 13a5 5 0 1 0 10 0"/></svg>
+                  <span>{{ getAccessibilityLabel(toilet.tags) }}</span>
+                </div>
+
+                <div class="popup-info-item" v-if="hasChangingTableInfo(toilet.tags)">
+                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h.01"/><path d="M15 12h.01"/><path d="M10 16c.5.5 1.5.5 2 0"/><path d="M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 5 6.3"/><path d="M12 2v2"/><path d="M12 20v2"/></svg>
+                  <span>{{ getChangingTableLabel(toilet.tags) }}</span>
+                </div>
+
+                <div class="popup-info-item" v-if="hasDrinkingWater(toilet.tags)">
+                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-11-7-11S5 10.7 5 15a7 7 0 0 0 7 7z"/></svg>
+                  <span>Drinking Water Nearby</span>
+                </div>
+
+                <div class="popup-info-item" v-if="getToiletPositionLabel(toilet.tags)">
+                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="9" x2="15" y2="15"/><line x1="15" y1="9" x2="9" y2="15"/></svg>
+                  <span>{{ getToiletPositionLabel(toilet.tags) }}</span>
+                </div>
+
+                <div class="popup-info-item" v-if="getToiletDisposalLabel(toilet.tags)">
+                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                  <span>{{ getToiletDisposalLabel(toilet.tags) }}</span>
+                </div>
+
+                <div class="popup-info-item" v-if="toilet.tags.unisex === 'yes'">
+                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                  <span>Unisex Restroom</span>
+                </div>
+
+                <div class="popup-info-item" v-if="toilet.tags['toilets:handwashing']">
+                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 22h20M12 2v16M12 10H8a2 2 0 0 0-2 2v2a2 2 0 0 0 2 2h4M12 10h4a2 2 0 0 1 2 2v2a2 2 0 0 1-2 2h-4"/></svg>
+                  <span>Handwashing: {{ toilet.tags['toilets:handwashing'] === 'yes' ? 'Yes' : 'No' }}</span>
+                </div>
+
+                <div class="popup-info-item" v-if="toilet.tags['toilets:paper_provided']">
+                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+                  <span>Toilet Paper Provided: {{ toilet.tags['toilets:paper_provided'] === 'yes' ? 'Yes' : 'No' }}</span>
+                </div>
+
+                <div class="popup-info-item" v-if="getPaymentLabel(toilet.tags)">
+                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="22" height="16" x="1" y="4" rx="2" ry="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+                  <span>Payment: {{ getPaymentLabel(toilet.tags) }}</span>
+                </div>
+
+                <div class="popup-info-item" v-if="getAccessTypeLabel(toilet.tags)">
+                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/></svg>
+                  <span>{{ getAccessTypeLabel(toilet.tags) }}</span>
+                </div>
+
+                <div class="popup-info-item" v-if="toilet.tags.opening_hours">
+                  <svg class="info-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  <span>Hours: {{ toilet.tags.opening_hours }}</span>
+                </div>
+              </div>
+
+              <a class="cta-button" :href="getDirectionsUrl(toilet.lat, toilet.lon)" target="_blank">
+                <span>Get Directions</span>
+                <svg class="cta-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+              </a>
+            </div>
+          </l-popup>
+        </l-marker>
+      </l-map>
+    </div>
+
+    <!-- Locate User FAB -->
+    <button
+      class="locate-fab"
+      :class="{ 'offset-up': isMobile && showBottomSheet && selectedToilet }"
+      @click="centerOnUserLocation"
+      aria-label="Center on my location"
+    >
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="fab-icon"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/></svg>
+    </button>
+
+    <!-- Bottom Sheet Backdrop -->
+    <transition name="fade">
+      <div
+        class="bottom-sheet-backdrop"
+        v-if="isMobile && showBottomSheet && selectedToilet"
+        @click="showBottomSheet = false"
+      ></div>
+    </transition>
+
+    <!-- Bottom Sheet Slide-Up Panel -->
+    <transition name="slide-up">
+      <div class="bottom-sheet-panel" v-if="isMobile && showBottomSheet && selectedToilet">
+        <div class="bottom-sheet-handle" @click="showBottomSheet = false"></div>
+
+        <div class="bottom-sheet-body">
+          <h2 class="bottom-sheet-title">{{ getToiletName(selectedToilet.tags) }}</h2>
+
+          <div class="bottom-sheet-badges">
+            <span class="badge badge-distance" v-if="getDistanceText(selectedToilet.lat, selectedToilet.lon)">
+              {{ getDistanceText(selectedToilet.lat, selectedToilet.lon).toUpperCase() }} AWAY
+            </span>
+
+            <span class="badge" :class="isFree(selectedToilet.tags) ? 'badge-free' : 'badge-paid'">
+              <!-- Piggy Bank Icon -->
+              <svg class="badge-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 5c-1.5 0-2.8 1.4-3 2-3.5-1.5-11-.3-11 5 0 1.8 0 3 2 4.5V20a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-1.4c.6.2 1.2.4 1.8.4h3.4c.6 0 1.2-.2 1.8-.4V20a1 1 0 0 0 1 1h2a1 1 0 0 0 1-1v-3.9c1.7-1.2 2-3.1 2-4.1 0-1.1-.9-2-2-2h-1c-.2-.6-1.5-2-3-2Z"/><path d="M9.5 14h.01"/><path d="M2 12h2"/><path d="M12 2v3"/></svg>
+              <span>{{ getFeeLabel(selectedToilet.tags) }}</span>
+            </span>
+
+            <span class="badge" :class="isAccessible(selectedToilet.tags) ? 'badge-accessible' : 'badge-inaccessible'">
+              <!-- Wheelchair Icon -->
+              <svg class="badge-icon" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2" fill="none"><circle cx="12" cy="5" r="2"/><path d="M9 18h6"/><path d="M10 7v6h4v5"/><path d="M7 13a5 5 0 1 0 10 0"/></svg>
+              <span>{{ getAccessibilityLabel(selectedToilet.tags) }}</span>
+            </span>
+
+            <span class="badge badge-neutral" v-if="hasChangingTableInfo(selectedToilet.tags)">
+              <!-- Baby Icon -->
+              <svg class="badge-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 12h.01"/><path d="M15 12h.01"/><path d="M10 16c.5.5 1.5.5 2 0"/><path d="M19 6.3a9 9 0 0 1 1.8 3.9 2 2 0 0 1 0 3.6 9 9 0 0 1-17.6 0 2 2 0 0 1 0-3.6A9 9 0 0 1 5 6.3"/><path d="M12 2v2"/><path d="M12 20v2"/></svg>
+              <span>{{ getChangingTableLabel(selectedToilet.tags) }}</span>
+            </span>
+
+            <span class="badge badge-neutral" v-if="hasDrinkingWater(selectedToilet.tags)">
+              <!-- Water Icon -->
+              <svg class="badge-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22a7 7 0 0 0 7-7c0-4.3-7-11-7-11S5 10.7 5 15a7 7 0 0 0 7 7z"/></svg>
+              <span>Drinking Water</span>
+            </span>
+          </div>
+
+          <div class="bottom-sheet-details">
+            <div class="detail-row" v-if="getToiletPositionLabel(selectedToilet.tags)">
+              <span class="detail-label">Type:</span>
+              <span class="detail-value">{{ getToiletPositionLabel(selectedToilet.tags) }}</span>
+            </div>
+            <div class="detail-row" v-if="getToiletDisposalLabel(selectedToilet.tags)">
+              <span class="detail-label">Disposal:</span>
+              <span class="detail-value">{{ getToiletDisposalLabel(selectedToilet.tags) }}</span>
+            </div>
+            <div class="detail-row" v-if="selectedToilet.tags.unisex">
+              <span class="detail-label">Unisex:</span>
+              <span class="detail-value">{{ selectedToilet.tags.unisex === 'yes' ? 'Yes' : 'No' }}</span>
+            </div>
+            <div class="detail-row" v-if="selectedToilet.tags['toilets:handwashing']">
+              <span class="detail-label">Handwashing:</span>
+              <span class="detail-value">{{ selectedToilet.tags['toilets:handwashing'] === 'yes' ? 'Yes' : 'No' }}</span>
+            </div>
+            <div class="detail-row" v-if="selectedToilet.tags['toilets:paper_provided']">
+              <span class="detail-label">Toilet Paper Provided:</span>
+              <span class="detail-value">{{ selectedToilet.tags['toilets:paper_provided'] === 'yes' ? 'Yes' : 'No' }}</span>
+            </div>
+            <div class="detail-row" v-if="getPaymentLabel(selectedToilet.tags)">
+              <span class="detail-label">Payment:</span>
+              <span class="detail-value">{{ getPaymentLabel(selectedToilet.tags) }}</span>
+            </div>
+            <div class="detail-row" v-if="getAccessTypeLabel(selectedToilet.tags)">
+              <span class="detail-label">Access:</span>
+              <span class="detail-value">{{ getAccessTypeLabel(selectedToilet.tags) }}</span>
+            </div>
+            <div class="detail-row" v-if="selectedToilet.tags.opening_hours">
+              <span class="detail-label">Hours:</span>
+              <span class="detail-value">{{ selectedToilet.tags.opening_hours }}</span>
+            </div>
+          </div>
+
+          <a class="bottom-sheet-cta" :href="getDirectionsUrl(selectedToilet.lat, selectedToilet.lon)" target="_blank">
+            <svg class="cta-icon-large" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="3 11 22 2 13 21 11 13 3 11"/></svg>
+            <span>Get Directions</span>
+          </a>
+        </div>
+      </div>
+    </transition>
   </div>
   <transition name="spinner">
     <div class="loading" v-show="loadingMarkers">
@@ -97,125 +255,335 @@
 </template>
 
 <style scoped>
+.app-layout {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
 .loading {
   position: absolute;
   bottom: 0;
-  z-index: 999;
+  z-index: 10000;
   left: 50%;
   transform: translate(-50%, 0);
-  background-color: #202124;
-  border-radius: 15px 15px 0px 0px;
+  background-color: rgba(32, 33, 36, 0.95);
+  backdrop-filter: blur(8px);
+  color: white;
+  border-radius: 16px 16px 0px 0px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 12px 12px 0;
+  padding: 12px 24px;
+  box-shadow: 0 -4px 12px rgba(0,0,0,0.15);
 }
 
 .loading-text {
   text-align: center;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 6px;
 }
 
 .map-container {
   display: flex;
   flex: 1;
+  width: 100%;
+  height: 100%;
 }
 
-.options-panel {
-  display: flex;
-  background-color: white;
-  color: black;
-  min-width: 50px;
-  transition: all 0.3s;
-}
-
-.options {
-  order: 1;
-}
-
-.options-list {
-  list-style-type: none;
-  padding: 12px;
-  font-size: medium;
-}
-
-.options-item input {
-  margin-right: 12px;
-}
-
-.toggle-menu {
-  width: 30px;
-  height: 50px;
-  display: block;
-  position: relative;
-  margin-left: auto;
-  margin-right: 9px;
-  z-index: 1000;
-  order: 2;
-}
-
-.toggle-menu i {
+/* Floating Filter Pills */
+.filter-bar {
   position: absolute;
-  display: block;
-  height: 2px;
-  background: #0094fc;
-  width: 30px;
-  -webkit-transition: all 0.3s;
-  transition: all 0.3s;
-}
-
-.toggle-menu i:nth-child(1) {
   top: 16px;
-}
-
-.toggle-menu i:nth-child(2) {
-  top: 24px;
-}
-
-.toggle-menu i:nth-child(3) {
-  top: 32px;
-}
-
-.toggle-menu.active i:nth-child(1) {
-  top: 25px;
-  -webkit-transform: rotateZ(45deg);
-  transform: rotateZ(45deg);
-}
-
-.toggle-menu.active i:nth-child(2) {
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 6px 16px;
   background: transparent;
+  box-shadow: none;
+  border: none;
+  scrollbar-width: none; /* Hide scrollbar Firefox */
+  -webkit-overflow-scrolling: touch;
 }
 
-.toggle-menu.active i:nth-child(3) {
-  top: 25px;
-  -webkit-transform: rotateZ(-45deg);
-  transform: rotateZ(-45deg);
+.filter-bar::-webkit-scrollbar {
+  display: none; /* Hide scrollbar Chrome/Safari/Opera */
 }
 
-.expand-enter-active,
-.expand-leave-active,
-.expand-enter-to {
-  transition: all 0.3s;
-  max-height: 200px;
-  max-width: 250px;
-  overflow: hidden;
-}
-.expand-enter,
-.expand-leave-to {
-  transition: all 0.3s;
-  max-height: 0;
-  max-width: 0;
-  opacity: 0;
+.filter-pill {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 9999px;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  background: white;
+  font-family: 'Inter', system-ui, sans-serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.08);
 }
 
+.filter-pill:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.filter-pill.active {
+  background: #1981fb;
+  color: white;
+  border-color: #1981fb;
+  box-shadow: 0 4px 6px -1px rgba(25, 129, 251, 0.2);
+}
+
+.pill-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  transition: transform 0.25s;
+}
+
+.filter-pill.active .pill-icon {
+  transform: scale(1.05);
+}
+
+/* Locate User FAB */
+.locate-fab {
+  position: absolute;
+  bottom: 24px;
+  right: 24px;
+  z-index: 999;
+  background: white;
+  border: 1px solid rgba(226, 232, 240, 0.8);
+  border-radius: 50%;
+  width: 54px;
+  height: 54px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  color: #1981fb;
+}
+
+.locate-fab:hover {
+  transform: scale(1.05);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.locate-fab:active {
+  transform: scale(0.95);
+}
+
+.locate-fab.offset-up {
+  transform: translateY(-260px); /* Lift above mobile bottom sheet */
+}
+
+@media (max-width: 480px) {
+  .locate-fab.offset-up {
+    transform: translateY(-280px);
+  }
+}
+
+.fab-icon {
+  width: 22px;
+  height: 22px;
+}
+
+/* Mobile Bottom Sheet */
+.bottom-sheet-backdrop {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(15, 23, 42, 0.25);
+  z-index: 9998;
+  backdrop-filter: blur(2px);
+  -webkit-backdrop-filter: blur(2px);
+}
+
+.bottom-sheet-panel {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top-left-radius: 28px;
+  border-top-right-radius: 28px;
+  z-index: 9999;
+  box-shadow: 0 -10px 30px -10px rgba(0, 0, 0, 0.15);
+  display: flex;
+  flex-direction: column;
+  padding: 8px 20px 28px;
+  max-height: 80vh;
+  overflow-y: auto;
+  border-top: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.bottom-sheet-handle {
+  width: 36px;
+  height: 5px;
+  background: #cbd5e1;
+  border-radius: 999px;
+  align-self: center;
+  margin-bottom: 18px;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.bottom-sheet-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.bottom-sheet-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #0f172a;
+  line-height: 1.25;
+  margin: 0 0 4px;
+}
+
+.bottom-sheet-badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 9999px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.badge-distance {
+  background-color: #f3e8ff;
+  color: #6b21a8;
+}
+
+.badge-free {
+  background-color: #eff6ff;
+  color: #1e40af;
+  border: 1px solid #dbeafe;
+}
+
+.badge-paid {
+  background-color: #fff7ed;
+  color: #c2410c;
+  border: 1px solid #ffedd5;
+}
+
+.badge-accessible {
+  background-color: #f1f5f9;
+  color: #334155;
+}
+
+.badge-inaccessible {
+  background-color: #fef2f2;
+  color: #991b1b;
+}
+
+.badge-neutral {
+  background-color: #f8fafc;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+}
+
+.badge-icon {
+  width: 14px;
+  height: 14px;
+}
+
+.bottom-sheet-details {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 8px 0;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 16px;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.detail-label {
+  color: #64748b;
+  font-weight: 500;
+}
+
+.detail-value {
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.bottom-sheet-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  background: #1981fb;
+  color: white;
+  text-decoration: none;
+  font-size: 15px;
+  font-weight: 700;
+  padding: 14px;
+  border-radius: 16px;
+  box-shadow: 0 8px 16px -4px rgba(25, 129, 251, 0.3);
+  transition: all 0.2s;
+  text-align: center;
+  margin-top: 12px;
+}
+
+.bottom-sheet-cta:hover {
+  background: #156edb;
+}
+
+.bottom-sheet-cta:active {
+  transform: scale(0.98);
+}
+
+.cta-icon-large {
+  width: 18px;
+  height: 18px;
+}
+
+/* Spinner Transition */
 .spinner-enter-active,
-.spinner-leave-active,
-.spinner-enter-to {
-  transition: all 0.3s;
+.spinner-leave-active {
+  transition: all 0.3s ease;
 }
-.spinner-enter,
+.spinner-enter-from,
 .spinner-leave-to {
-  transition: all 0.3s;
   transform: translate(-50%, 100%);
+  opacity: 0;
 }
 </style>
 
@@ -235,13 +603,11 @@ import {
   LRectangle,
 } from "@vue-leaflet/vue-leaflet";
 import "leaflet/dist/leaflet.css";
-import { defineComponent, watch } from "vue";
-import type { PropType } from "vue";
+import { watch, ref, reactive, computed, onMounted, onUnmounted, markRaw } from "vue";
+import type { Ref } from "vue";
 import axios from "axios";
 import { debounce } from "lodash";
 import OverpassApi, { type OverpassElement } from "../services/overpass-api";
-import { ref, reactive } from "vue";
-import { computed, type Ref } from "@vue/reactivity";
 import L, { divIcon, icon } from "leaflet";
 import SpinnerComponent from "./SpinnerComponent.vue";
 import { useToast } from 'vue-toastification';
@@ -251,6 +617,206 @@ const checkedOptions: Ref<string[]> = ref(["fee_no"]);
 const showOption = ref(false);
 const showCurrentLocation = ref(false);
 let loadingMarkers = ref(false);
+
+// Responsive detection
+const isMobile = ref(typeof window !== "undefined" ? window.innerWidth < 768 : false);
+const checkMobile = () => {
+  isMobile.value = window.innerWidth < 768;
+};
+
+onMounted(() => {
+  window.addEventListener("resize", checkMobile);
+  checkMobile();
+});
+
+onUnmounted(() => {
+  window.removeEventListener("resize", checkMobile);
+});
+
+// Bottom sheet state
+const selectedToilet = ref<OverpassElement | null>(null);
+const showBottomSheet = ref(false);
+
+const onMarkerClick = (toilet: OverpassElement) => {
+  selectedToilet.value = toilet;
+  if (isMobile.value) {
+    showBottomSheet.value = true;
+    if (mapState.map && (mapState.map as any).closePopup) {
+      (mapState.map as any).closePopup();
+    }
+  } else {
+    showBottomSheet.value = false;
+  }
+};
+
+const onMapClick = () => {
+  showBottomSheet.value = false;
+};
+
+// Toggle filters
+const toggleFilter = (option: string) => {
+  if (checkedOptions.value.includes(option)) {
+    checkedOptions.value = checkedOptions.value.filter((o) => o !== option);
+  } else {
+    checkedOptions.value = [...checkedOptions.value, option];
+  }
+};
+
+// Distance calculations
+const deg2rad = (deg: number): number => {
+  return deg * (Math.PI / 180);
+};
+
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): string => {
+  const R = 6371; // Radius of the earth in km
+  const dLat = deg2rad(lat2 - lat1);
+  const dLon = deg2rad(lon2 - lon1);
+  const a =
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(deg2rad(lat1)) *
+      Math.cos(deg2rad(lat2)) *
+      Math.sin(dLon / 2) *
+      Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  const d = R * c; // Distance in km
+  if (d < 1) {
+    return `${Math.round(d * 1000)}m`;
+  }
+  return `${d.toFixed(1).replace(".", ",")}km`;
+};
+
+const getDistanceText = (toiletLat: number, toiletLon: number) => {
+  if (!mapState.latitude || !mapState.longitude) return "";
+  return calculateDistance(
+    mapState.latitude,
+    mapState.longitude,
+    toiletLat,
+    toiletLon
+  );
+};
+
+// Label/tag helpers
+const getToiletName = (tags: any) => {
+  if (!tags) return "Toilettes";
+  if (tags.name) return tags.name;
+  if (tags.operator) return `Toilette (${tags.operator})`;
+  return "Toilettes publiques";
+};
+
+const isFree = (tags: any) => {
+  return !tags.fee || tags.fee === "no";
+};
+
+const getFeeLabel = (tags: any) => {
+  if (!tags) return "Free to use";
+  if (isFree(tags)) return "Free to use";
+  if (tags.fee === "yes") return "Paid restroom";
+  return `Paid (${tags.fee})`;
+};
+
+const isAccessible = (tags: any) => {
+  return tags.wheelchair === "yes" || tags.wheelchair === "designated";
+};
+
+const getAccessibilityLabel = (tags: any) => {
+  if (!tags || !tags.wheelchair) return "No wheelchair access";
+  const val = tags.wheelchair;
+  if (val === "yes" || val === "designated") return "Wheelchair accessible";
+  if (val === "limited") return "Limited wheelchair access";
+  return "No wheelchair access";
+};
+
+const hasChangingTable = (tags: any) => {
+  return (
+    tags.changing_table === "yes" ||
+    tags.changing_table === "limited" ||
+    tags.changing_table === "designated"
+  );
+};
+
+const getChangingTableLabel = (tags: any) => {
+  if (!tags || !tags.changing_table) return "No changing table";
+  const val = tags.changing_table;
+  if (val === "yes" || val === "designated") return "Changing table available";
+  if (val === "limited") return "Limited changing table";
+  return "No changing table";
+};
+
+const hasChangingTableInfo = (tags: any) => {
+  return tags && tags.changing_table && tags.changing_table !== "no";
+};
+
+const hasDrinkingWater = (tags: any) => {
+  return (
+    tags &&
+    (tags.drinking_water === "yes" ||
+      tags.bottle === "yes" ||
+      tags["drinking_water:legal"] === "yes")
+  );
+};
+
+const getToiletPositionLabel = (tags: any) => {
+  if (!tags || !tags["toilets:position"]) return null;
+  const val = tags["toilets:position"];
+  if (val === "squat") return "Squat Toilet";
+  if (val === "seat") return "Seat Toilet";
+  if (val === "urinal") return "Urinal";
+  return val.charAt(0).toUpperCase() + val.slice(1) + " Toilet";
+};
+
+const getToiletDisposalLabel = (tags: any) => {
+  if (!tags || !tags["toilets:disposal"]) return null;
+  const val = tags["toilets:disposal"];
+  if (val === "flush") return "Flush Toilet";
+  if (val === "chemical") return "Chemical Toilet";
+  if (val === "dry" || val === "composting") return "Dry Toilet";
+  if (val === "pit") return "Pit Latrine";
+  return val.charAt(0).toUpperCase() + val.slice(1) + " Toilet";
+};
+
+const getAccessTypeLabel = (tags: any) => {
+  if (!tags || !tags.access || tags.access === "yes" || tags.access === "public")
+    return null;
+  const val = tags.access;
+  if (val === "customers") return "Customers only";
+  if (val === "private") return "Private";
+  return val.charAt(0).toUpperCase() + val.slice(1) + " access";
+};
+
+const getPaymentLabel = (tags: any) => {
+  if (!tags) return null;
+  const methods = [];
+  if (tags["payment:coins"] === "yes" || tags["payment:cash"] === "yes" || tags["payment:notes"] === "yes") methods.push("Cash/Coins");
+  if (tags["payment:cards"] === "yes" || tags["payment:credit_cards"] === "yes" || tags["payment:debit_cards"] === "yes") methods.push("Cards");
+  if (tags["payment:contactless"] === "yes") methods.push("Contactless");
+  if (methods.length > 0) return methods.join(", ");
+  return null;
+};
+
+// Universal Navigation Link
+const getDirectionsUrl = (lat: number, lon: number) => {
+  const userAgent = navigator.userAgent || navigator.vendor || (window as any).opera;
+  const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream;
+  if (isIOS) {
+    return `https://maps.apple.com/?q=${lat},${lon}`;
+  }
+  return `https://www.google.com/maps/search/?api=1&query=${lat},${lon}`;
+};
+
+// Center map FAB logic
+const centerOnUserLocation = () => {
+  if (mapState.latitude && mapState.longitude && mapState.map) {
+    const latLon = L.latLng(mapState.latitude, mapState.longitude);
+    (mapState.map as any).setView(latLon, 16);
+  } else {
+    window.navigator.geolocation.getCurrentPosition((position) => {
+      const latLon = L.latLng(position.coords.latitude, position.coords.longitude);
+      (mapState.map as any).setView(latLon, 16);
+      updatePosition(position);
+    }, errorGetLocation);
+  }
+};
+
 
 const userIcon = divIcon({
   html: `
@@ -306,14 +872,14 @@ const changeIcon = () => {
 
 const onLoad = (event: any) => {
   console.log(event);
-  mapState.map = (mapLeaflet as any).value.leafletObject;
+  mapState.map = markRaw((mapLeaflet as any).value.leafletObject);
   console.log((mapState.map as any).getBounds(), mapState.bounds);
   if (window.navigator.geolocation) {
     // Geolocation available
     window.navigator.geolocation.getCurrentPosition((position) => {
       console.log(position);
       const latLon = L.latLng(position.coords.latitude,  position.coords.longitude);
-      (mapState.map as any).setView(latLon, mapState.zoom);
+      (mapState.map as any).setView(latLon, mapState.zoom || 16);
       updatePosition(position);
       loadToiletMarkers((mapState.map as any).getBounds());
     }, errorGetLocation);

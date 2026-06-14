@@ -1,6 +1,22 @@
-# toilet-finder
+# Toilet Finder
 
-This template should help get you started developing with Vue 3 in Vite.
+An application to find public toilets using OpenStreetMap data (Overpass API). Built with Vue 3, Vite, TypeScript, Leaflet, and configured as a Progressive Web App (PWA).
+
+## Features
+- **Interactive Map**: Built with Leaflet, centering on the user's geolocation and displaying nearby restrooms.
+- **Modern Floating Filters**: Filter toilets based on features ("Free Toilets", "Wheelchair Accessible", "Drinking Water Nearby") using styled floating pills at the top.
+- **Mobile-Friendly (PWA)**: Designed for mobile use, offering a native-like experience:
+  - **Bottom Sheet**: When clicking a marker on mobile, details slide up from the bottom with a dimmed background overlay.
+  - **Positioned Controls**: Zoom controls are positioned at the bottom left, keeping the top clear for filters.
+  - **Centering FAB**: Quickly center the map back to your current position, shifting up dynamically when the bottom sheet is open.
+- **Detailed Restroom Info**: Restrooms show customized details with icons (in desktop popups and the mobile bottom sheet):
+  - Fee and accessibility status.
+  - Changing table and drinking water availability.
+  - Flush vs. squat position, disposal type, and unisex status.
+  - Handwashing sink, toilet paper availability, and accepted payment methods (Cash, Cards, Contactless).
+  - Calculated distance from your current position.
+- **Universal Navigation Link**: Direction CTA buttons open native map apps depending on the device: Apple Maps on iOS, and Google Maps on Android and Desktop.
+
 
 ## Recommended IDE Setup
 

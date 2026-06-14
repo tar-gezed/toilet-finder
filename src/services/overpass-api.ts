@@ -39,6 +39,17 @@ export type OverpassTags = {
   "drink:sparkling_water"?: "yes" | "no";
   "drinking_water:legal"?: "yes" | "no";
   operational_status?: "out_of_order";
+  unisex?: "yes" | "no";
+  "toilets:handwashing"?: "yes" | "no";
+  "toilets:paper_provided"?: "yes" | "no";
+  "payment:coins"?: "yes" | "no";
+  "payment:cash"?: "yes" | "no";
+  "payment:notes"?: "yes" | "no";
+  "payment:cards"?: "yes" | "no";
+  "payment:credit_cards"?: "yes" | "no";
+  "payment:debit_cards"?: "yes" | "no";
+  "payment:contactless"?: "yes" | "no";
+  [key: string]: any;
 };
 
 export type ToiletSpot = {
