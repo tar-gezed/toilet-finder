@@ -14,12 +14,8 @@ export default defineConfig({
       devOptions: {
         enabled: true,
       },
-      mode: "development",
       base: "/toilet-finder/",
-      // srcDir: "src",
-      // filename: "sw.ts",
       includeAssets: ["/favicon.ico", "/toilet-finder/favicon.ico"],
-      // strategies: "injectManifest",
       manifest: {
         name: "Toilet Finder",
         short_name: "TF",

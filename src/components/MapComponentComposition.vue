@@ -43,6 +43,7 @@
       >
         <l-tile-layer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution="&copy; <a href='https://www.openstreetmap.org/copyright'>OpenStreetMap</a> contributors"
           layer-type="base"
           name="OpenStreetMap"
         ></l-tile-layer>
@@ -183,7 +184,7 @@
                 target="_blank"
               >
                 <span>Get Directions</span>
-                <navigation class="cta-icon" />
+                <Navigation class="cta-icon" />
               </a>
             </div>
           </l-popup>
@@ -349,7 +350,7 @@
             :href="getDirectionsUrl(selectedToilet.lat, selectedToilet.lon)"
             target="_blank"
           >
-            <navigation class="cta-icon-large" />
+            <Navigation class="cta-icon-large" />
             <span>Get Directions</span>
           </a>
         </div>
@@ -712,14 +713,16 @@ import {
   watch,
   ref,
   reactive,
-  computed,
   onMounted,
   onUnmounted,
   markRaw,
 } from "vue";
 import type { Ref } from "vue";
-import { debounce } from "lodash";
-import OverpassApi, { type OverpassElement } from "../services/overpass-api";
+import debounce from "lodash/debounce";
+import OverpassApi, {
+  type OverpassElement,
+  type OverpassTags,
+} from "../services/overpass-api";
 import L, { divIcon } from "leaflet";
 import SpinnerComponent from "./SpinnerComponent.vue";
 import { useToast } from "vue-toastification";
@@ -742,8 +745,6 @@ import {
 
 const mapLeaflet = ref(null);
 const checkedOptions: Ref<string[]> = ref(["fee_no"]);
-const showOption = ref(false);
-const showCurrentLocation = ref(false);
 const loadingMarkers = ref(false);
 
 // Responsive detection
@@ -761,6 +762,10 @@ onMounted(() => {
 
 onUnmounted(() => {
   window.removeEventListener("resize", checkMobile);
+  // Clean up geolocation watch to prevent memory leaks
+  if (watchLocationID !== 0) {
+    navigator.geolocation.clearWatch(watchLocationID);
+  }
 });
 
 // Bottom sheet state
@@ -831,29 +836,29 @@ const getDistanceText = (toiletLat: number, toiletLon: number) => {
 };
 
 // Label/tag helpers
-const getToiletName = (tags: any) => {
+const getToiletName = (tags: OverpassTags): string => {
   if (!tags) return "Toilettes";
   if (tags.name) return tags.name;
   if (tags.operator) return `Toilette (${tags.operator})`;
   return "Toilettes publiques";
 };
 
-const isFree = (tags: any) => {
+const isFree = (tags: OverpassTags): boolean => {
   return !tags.fee || tags.fee === "no";
 };
 
-const getFeeLabel = (tags: any) => {
+const getFeeLabel = (tags: OverpassTags): string => {
   if (!tags) return "Free to use";
   if (isFree(tags)) return "Free to use";
   if (tags.fee === "yes") return "Paid restroom";
   return `Paid (${tags.fee})`;
 };
 
-const isAccessible = (tags: any) => {
+const isAccessible = (tags: OverpassTags): boolean => {
   return tags.wheelchair === "yes" || tags.wheelchair === "designated";
 };
 
-const getAccessibilityLabel = (tags: any) => {
+const getAccessibilityLabel = (tags: OverpassTags): string => {
   if (!tags || !tags.wheelchair) return "No wheelchair access";
   const val = tags.wheelchair;
   if (val === "yes" || val === "designated") return "Wheelchair accessible";
@@ -861,15 +866,7 @@ const getAccessibilityLabel = (tags: any) => {
   return "No wheelchair access";
 };
 
-const hasChangingTable = (tags: any) => {
-  return (
-    tags.changing_table === "yes" ||
-    tags.changing_table === "limited" ||
-    tags.changing_table === "designated"
-  );
-};
-
-const getChangingTableLabel = (tags: any) => {
+const getChangingTableLabel = (tags: OverpassTags): string => {
   if (!tags || !tags.changing_table) return "No changing table";
   const val = tags.changing_table;
   if (val === "yes" || val === "designated") return "Changing table available";
@@ -877,12 +874,12 @@ const getChangingTableLabel = (tags: any) => {
   return "No changing table";
 };
 
-const hasChangingTableInfo = (tags: any) => {
-  return tags && tags.changing_table && tags.changing_table !== "no";
+const hasChangingTableInfo = (tags: OverpassTags): boolean => {
+  return !!(tags && tags.changing_table && tags.changing_table !== "no");
 };
 
-const hasDrinkingWater = (tags: any) => {
-  return (
+const hasDrinkingWater = (tags: OverpassTags): boolean => {
+  return !!(
     tags &&
     (tags.drinking_water === "yes" ||
       tags.bottle === "yes" ||
@@ -890,7 +887,7 @@ const hasDrinkingWater = (tags: any) => {
   );
 };
 
-const getToiletPositionLabel = (tags: any) => {
+const getToiletPositionLabel = (tags: OverpassTags): string | null => {
   if (!tags || !tags["toilets:position"]) return null;
   const val = tags["toilets:position"];
   if (val === "squat") return "Squat Toilet";
@@ -899,7 +896,7 @@ const getToiletPositionLabel = (tags: any) => {
   return val.charAt(0).toUpperCase() + val.slice(1) + " Toilet";
 };
 
-const getToiletDisposalLabel = (tags: any) => {
+const getToiletDisposalLabel = (tags: OverpassTags): string | null => {
   if (!tags || !tags["toilets:disposal"]) return null;
   const val = tags["toilets:disposal"];
   if (val === "flush") return "Flush Toilet";
@@ -909,7 +906,7 @@ const getToiletDisposalLabel = (tags: any) => {
   return val.charAt(0).toUpperCase() + val.slice(1) + " Toilet";
 };
 
-const getAccessTypeLabel = (tags: any) => {
+const getAccessTypeLabel = (tags: OverpassTags): string | null => {
   if (
     !tags ||
     !tags.access ||
@@ -923,9 +920,9 @@ const getAccessTypeLabel = (tags: any) => {
   return val.charAt(0).toUpperCase() + val.slice(1) + " access";
 };
 
-const getPaymentLabel = (tags: any) => {
+const getPaymentLabel = (tags: OverpassTags): string | null => {
   if (!tags) return null;
-  const methods = [];
+  const methods: string[] = [];
   if (
     tags["payment:coins"] === "yes" ||
     tags["payment:cash"] === "yes" ||
@@ -944,7 +941,7 @@ const getPaymentLabel = (tags: any) => {
 };
 
 // Universal Navigation Link
-const getDirectionsUrl = (lat: number, lon: number) => {
+const getDirectionsUrl = (lat: number, lon: number): string => {
   const userAgent =
     navigator.userAgent || navigator.vendor || (window as any).opera;
   const isIOS = /iPad|iPhone|iPod/.test(userAgent) && !(window as any).MSStream;
@@ -990,47 +987,20 @@ const mapState = reactive({
   longitude: 12,
   accuracy: 100,
   userCoords: {} as GeolocationPosition,
-  bounds: null,
-  map: {},
+  bounds: null as any,
+  map: null as L.Map | null,
   toiletMarkers: [] as OverpassElement[],
 });
 
 const toast = useToast();
 
-let iconWidth = 25;
-const iconHeight = 40;
 let watchLocationID = 0;
 
-const iconUrl = computed(() => {
-  return `https://placekitten.com/${iconWidth}/${iconHeight}`;
-});
-
-const iconSize = computed(() => {
-  return [iconWidth, iconHeight];
-});
-
-const log = (a: any) => {
-  console.log(a);
-};
-
-const changeIcon = () => {
-  console.log("toto", mapState.userCoords);
-  mapState.latitude = 1;
-  mapState.longitude = 1;
-  iconWidth += 2;
-  if (iconWidth > iconHeight) {
-    iconWidth = Math.floor(iconHeight / 2);
-  }
-};
-
 const onLoad = (event: any) => {
-  console.log(event);
   mapState.map = markRaw((mapLeaflet as any).value.leafletObject);
-  console.log((mapState.map as any).getBounds(), mapState.bounds);
   if (window.navigator.geolocation) {
     // Geolocation available
     window.navigator.geolocation.getCurrentPosition((position) => {
-      console.log(position);
       const latLon = L.latLng(
         position.coords.latitude,
         position.coords.longitude
@@ -1051,17 +1021,16 @@ const onLoad = (event: any) => {
 const loadToiletMarkers = async (bounds: any) => {
   mapState.bounds = bounds;
   loadingMarkers.value = true;
-  const newMarkers = await OverpassApi.searchToiletSpots(
-    bounds,
-    checkedOptions
-  );
-  mapState.toiletMarkers =
-    newMarkers.length > 0 ? newMarkers : mapState.toiletMarkers;
+  const result = await OverpassApi.searchToiletSpots(bounds, checkedOptions);
+  // null = API error (429, timeout, network) → keep existing cached markers
+  // OverpassElement[] = success (may be empty if no toilets in area) → update
+  if (result !== null) {
+    mapState.toiletMarkers = result;
+  }
   loadingMarkers.value = false;
 };
 
 const updatePosition = (position: GeolocationPosition) => {
-  showCurrentLocation.value = true;
   mapState.latitude = position.coords.latitude;
   mapState.longitude = position.coords.longitude;
   mapState.accuracy = position.coords.accuracy;
@@ -1077,9 +1046,14 @@ const errorAuthorizeLocation = () => {
 };
 
 const boundsUpdated = debounce(loadToiletMarkers, 3000, {
-  leading: true,
+  leading: false,
   trailing: true,
 });
 
-watch(checkedOptions, () => boundsUpdated((mapState.map as any).getBounds()));
+watch(checkedOptions, () => {
+  // Guard: only call getBounds if the map is actually loaded
+  if (mapState.map && typeof (mapState.map as any).getBounds === "function") {
+    boundsUpdated((mapState.map as any).getBounds());
+  }
+});
 </script>
